@@ -177,8 +177,13 @@ jobs:
         APP_PATH=$(find build -name "*.app" | head -1)
         echo "App found: $APP_PATH"
         # Copy resource files into app bundle
-        cp InstallerApp/config.plist "$APP_PATH/config.plist"
-        cp InstallerApp/next_logo.png "$APP_PATH/next_logo.png"
+        cp InstallerApp/config.plist   "$APP_PATH/config.plist"
+        cp InstallerApp/next.png       "$APP_PATH/next.png"
+        cp InstallerApp/BGMI.webp     "$APP_PATH/BGMI.webp"
+        cp InstallerApp/GL.webp       "$APP_PATH/GL.webp"
+        cp InstallerApp/KR.webp       "$APP_PATH/KR.webp"
+        cp InstallerApp/VN.webp       "$APP_PATH/VN.webp"
+        cp InstallerApp/TW.webp       "$APP_PATH/TW.webp"
         mkdir -p Payload
         cp -r "$APP_PATH" Payload/
         zip -r InstallerApp_unsigned.ipa Payload/
