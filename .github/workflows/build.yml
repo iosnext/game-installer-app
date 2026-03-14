@@ -1,0 +1,188 @@
+name: Build IPA
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:  # Manual trigger button bhi hoga
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Select Xcode
+      run: sudo xcode-select -s /Applications/Xcode.app
+
+    - name: Create Xcode project
+      run: |
+        mkdir -p InstallerApp.xcodeproj
+        cat > InstallerApp.xcodeproj/project.pbxproj << 'PBXEOF'
+        // !$*UTF8*$!
+        {
+          archiveVersion = 1;
+          classes = {};
+          objectVersion = 56;
+          objects = {
+            /* Begin PBXBuildFile section */
+            AA01 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00; };
+            /* End PBXBuildFile section */
+            /* Begin PBXFileReference section */
+            AA00 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = InstallerApp/AppDelegate.swift; sourceTree = "<group>"; };
+            AAPROD /* InstallerApp */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = InstallerApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+            AAPLIST /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = InstallerApp/Info.plist; sourceTree = "<group>"; };
+            /* End PBXFileReference section */
+            /* Begin PBXGroup section */
+            AAGRP /* InstallerApp */ = {
+              isa = PBXGroup;
+              children = (AA00, AAPLIST);
+              name = InstallerApp;
+              sourceTree = "<group>";
+            };
+            AAROOT = {
+              isa = PBXGroup;
+              children = (AAGRP, AAPRODUCTS);
+              sourceTree = "<group>";
+            };
+            AAPRODUCTS /* Products */ = {
+              isa = PBXGroup;
+              children = (AAPROD);
+              name = Products;
+              sourceTree = "<group>";
+            };
+            /* End PBXGroup section */
+            /* Begin PBXNativeTarget section */
+            AATARGET /* InstallerApp */ = {
+              isa = PBXNativeTarget;
+              buildConfigurationList = AABCL;
+              buildPhases = (AASOURCES);
+              buildRules = ();
+              dependencies = ();
+              name = InstallerApp;
+              productName = InstallerApp;
+              productReference = AAPROD;
+              productType = "com.apple.product-type.application";
+            };
+            /* End PBXNativeTarget section */
+            /* Begin PBXProject section */
+            AAPROJ /* Project object */ = {
+              isa = PBXProject;
+              buildConfigurationList = AAPBCL;
+              compatibilityVersion = "Xcode 14.0";
+              developmentRegion = en;
+              hasScannedForEncodings = 0;
+              knownRegions = (en);
+              mainGroup = AAROOT;
+              projectDirPath = "";
+              projectRoot = "";
+              targets = (AATARGET);
+            };
+            /* End PBXProject section */
+            /* Begin PBXSourcesBuildPhase section */
+            AASOURCES /* Sources */ = {
+              isa = PBXSourcesBuildPhase;
+              buildActionMask = 2147483647;
+              files = (AA01);
+              runOnlyForDeploymentPostprocessing = 0;
+            };
+            /* End PBXSourcesBuildPhase section */
+            /* Begin XCBuildConfiguration section */
+            AARELEASE /* Release */ = {
+              isa = XCBuildConfiguration;
+              buildSettings = {
+                ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+                CODE_SIGN_IDENTITY = "";
+                CODE_SIGNING_ALLOWED = NO;
+                CODE_SIGNING_REQUIRED = NO;
+                CURRENT_PROJECT_VERSION = 1;
+                INFOPLIST_FILE = InstallerApp/Info.plist;
+                IPHONEOS_DEPLOYMENT_TARGET = 14.0;
+                LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
+                MARKETING_VERSION = 1.0;
+                PRODUCT_BUNDLE_IDENTIFIER = com.installer.gameinstaller;
+                PRODUCT_NAME = InstallerApp;
+                SDKROOT = iphoneos;
+                SWIFT_VERSION = 5.0;
+                TARGETED_DEVICE_FAMILY = 1;
+              };
+              name = Release;
+            };
+            AADEBUG /* Debug */ = {
+              isa = XCBuildConfiguration;
+              buildSettings = {
+                ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+                CODE_SIGN_IDENTITY = "";
+                CODE_SIGNING_ALLOWED = NO;
+                CODE_SIGNING_REQUIRED = NO;
+                CURRENT_PROJECT_VERSION = 1;
+                INFOPLIST_FILE = InstallerApp/Info.plist;
+                IPHONEOS_DEPLOYMENT_TARGET = 14.0;
+                LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
+                MARKETING_VERSION = 1.0;
+                PRODUCT_BUNDLE_IDENTIFIER = com.installer.gameinstaller;
+                PRODUCT_NAME = InstallerApp;
+                SDKROOT = iphoneos;
+                SWIFT_VERSION = 5.0;
+                TARGETED_DEVICE_FAMILY = 1;
+              };
+              name = Debug;
+            };
+            AAPBRELEASE /* Release */ = {
+              isa = XCBuildConfiguration;
+              buildSettings = { ALWAYS_SEARCH_USER_PATHS = NO; };
+              name = Release;
+            };
+            AAPBDEBUG /* Debug */ = {
+              isa = XCBuildConfiguration;
+              buildSettings = { ALWAYS_SEARCH_USER_PATHS = NO; };
+              name = Debug;
+            };
+            /* End XCBuildConfiguration section */
+            /* Begin XCConfigurationList section */
+            AABCL /* Build configuration list for PBXNativeTarget */ = {
+              isa = XCConfigurationList;
+              buildConfigurations = (AADEBUG, AARELEASE);
+              defaultConfigurationIsVisible = 0;
+              defaultConfigurationName = Release;
+            };
+            AAPBCL /* Build configuration list for PBXProject */ = {
+              isa = XCConfigurationList;
+              buildConfigurations = (AAPBDEBUG, AAPBRELEASE);
+              defaultConfigurationIsVisible = 0;
+              defaultConfigurationName = Release;
+            };
+            /* End XCConfigurationList section */
+          };
+          rootObject = AAPROJ;
+        }
+        PBXEOF
+
+    - name: Build (unsigned)
+      run: |
+        xcodebuild \
+          -project InstallerApp.xcodeproj \
+          -scheme InstallerApp \
+          -configuration Release \
+          -sdk iphoneos \
+          -derivedDataPath build \
+          CODE_SIGNING_ALLOWED=NO \
+          CODE_SIGNING_REQUIRED=NO \
+          CODE_SIGN_IDENTITY="" \
+          | tail -20
+
+    - name: Package IPA
+      run: |
+        APP_PATH=$(find build -name "*.app" | head -1)
+        mkdir -p Payload
+        cp -r "$APP_PATH" Payload/
+        zip -r InstallerApp_unsigned.ipa Payload/
+        echo "IPA created: $(ls -lh InstallerApp_unsigned.ipa)"
+
+    - name: Upload IPA artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: InstallerApp_unsigned
+        path: InstallerApp_unsigned.ipa
+        retention-days: 30
