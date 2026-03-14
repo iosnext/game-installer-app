@@ -5,18 +5,18 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     var window: UIWindow?
 
-    // ── CHANGE THIS URL ────────────────────────────────────────────────────────
-    // Apna server ka manifest URL daalo (certificate name aur app name ke saath)
-    // Example: https://192.168.1.65:3443/manifest/NationalOilwell/bgmi
-    let manifestURL = "https://192.168.1.65:3443/manifest/Takeoff/bgmi"
-    // ──────────────────────────────────────────────────────────────────────────
+    // URL is read from config.plist — no recompile needed to change URL!
+    var manifestURL: String {
+        if let path = Bundle.main.path(forResource: "config", ofType: "plist"),
+           let dict = NSDictionary(contentsOfFile: path),
+           let url  = dict["ManifestURL"] as? String, !url.isEmpty {
+            return url
+        }
+        // Fallback default
+        return "https://192.168.1.65:3443/manifest/Takeoff/bgmi"
+    }
 
-    func application(
-        _ application: UIApplication,
-        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
-    ) -> Bool {
-
-        // Setup a minimal window
+    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         window = UIWindow(frame: UIScreen.main.bounds)
         window?.backgroundColor = .black
         window?.rootViewController = LaunchViewController(manifestURL: manifestURL)
