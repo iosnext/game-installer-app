@@ -1,0 +1,32 @@
+name: InstallerApp
+options:
+  bundleIdPrefix: com.next
+  deploymentTarget:
+    iOS: "14.0"
+  xcodeVersion: "15"
+
+settings:
+  base:
+    PRODUCT_BUNDLE_IDENTIFIER: com.next.gameinstaller
+    SWIFT_VERSION: "5.0"
+    TARGETED_DEVICE_FAMILY: "1,2"
+    IPHONEOS_DEPLOYMENT_TARGET: "14.0"
+    INFOPLIST_FILE: InstallerApp/Info.plist
+    ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    CODE_SIGN_STYLE: Manual
+    CODE_SIGNING_REQUIRED: "NO"
+    CODE_SIGNING_ALLOWED: "NO"
+
+targets:
+  InstallerApp:
+    type: application
+    platform: iOS
+    sources:
+      - path: InstallerApp
+        includes:
+          - "**/*.swift"
+          - "**/*.plist"
+          - "**/*.png"
+          - "**/*.webp"
+    info:
+      path: InstallerApp/Info.plist

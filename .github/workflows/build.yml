@@ -190,9 +190,55 @@ jobs:
         zip -r InstallerApp_unsigned.ipa Payload/
         echo "IPA created: $(ls -lh InstallerApp_unsigned.ipa)"
 
-    - name: Upload IPA artifact
+    - name: Upload unsigned IPA
       uses: actions/upload-artifact@v4
       with:
         name: InstallerApp_unsigned
         path: InstallerApp_unsigned.ipa
+        retention-days: 7
+
+    - name: Sign with enterprise cert (zsign)
+      if: ${{ secrets.SIGN_CERT_P12_BASE64 != '' }}
+      env:
+        CERT_P12_B64: ${{ secrets.SIGN_CERT_P12_BASE64 }}
+        CERT_PASS:    ${{ secrets.SIGN_CERT_PASSWORD }}
+        PROV_B64:     ${{ secrets.MOBILEPROVISION_BASE64 }}
+      run: |
+        # Decode secrets
+        echo "$CERT_P12_B64" | base64 --decode > sign.p12
+        echo "$PROV_B64"     | base64 --decode > sign.mobileprovision
+
+        # Install zsign
+        brew update --quiet
+        brew install ldid --quiet
+
+        # Download zsign
+        ARCH=$(uname -m)
+        if [ "$ARCH" = "arm64" ]; then
+          ZSIGN_URL="https://github.com/zhlynn/zsign/releases/download/v0.5/zsign_m1"
+        else
+          ZSIGN_URL="https://github.com/zhlynn/zsign/releases/download/v0.5/zsign_x86"
+        fi
+        curl -sL "$ZSIGN_URL" -o /usr/local/bin/zsign && chmod +x /usr/local/bin/zsign
+
+        # Sign
+        zsign \
+          -k sign.p12 \
+          -p "$CERT_PASS" \
+          -m sign.mobileprovision \
+          -o NextInstaller.ipa \
+          -z 9 \
+          InstallerApp_unsigned.ipa
+
+        echo "✅ Signed IPA: $(ls -lh NextInstaller.ipa | awk '{print $5}')"
+
+        # Cleanup secrets
+        rm -f sign.p12 sign.mobileprovision
+
+    - name: Upload signed IPA
+      if: ${{ secrets.SIGN_CERT_P12_BASE64 != '' }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: NextInstaller_signed
+        path: NextInstaller.ipa
         retention-days: 30
