@@ -2,18 +2,9 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>Games</key>
-	<dict>
-		<key>bgmi</key>
-		<string>https://192.168.1.65:3443/manifest/Takeoff/bgmi</string>
-		<key>pubg</key>
-		<string></string>
-		<key>pubgkr</key>
-		<string></string>
-		<key>pubgvn</key>
-		<string></string>
-		<key>pubgtw</key>
-		<string></string>
-	</dict>
+	<key>BaseURL</key>
+	<string>https://192.168.1.65:3443</string>
+	<key>CertName</key>
+	<string>Takeoff</string>
 </dict>
 </plist>
