@@ -45,10 +45,10 @@ class InstallerWebVC: UIViewController, WKNavigationDelegate, WKUIDelegate {
         webView = WKWebView(frame: .zero, configuration: cfg)
         webView.navigationDelegate = self
         webView.uiDelegate         = self
-        webView.backgroundColor    = UIColor(red: 0.05, green: 0.05, blue: 0.10, alpha: 1)
+        webView.backgroundColor    = .black
         webView.isOpaque           = false
         webView.scrollView.bounces = false
-        webView.scrollView.contentInsetAdjustmentBehavior = .never
+        webView.scrollView.contentInsetAdjustmentBehavior = .always
         view = webView
     }
 
