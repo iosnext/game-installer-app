@@ -42,6 +42,10 @@ class InstallerWebVC: UIViewController, WKNavigationDelegate, WKUIDelegate {
     override func loadView() {
         let cfg = WKWebViewConfiguration()
         cfg.allowsInlineMediaPlayback = true
+        if #available(iOS 13.0, *) {
+            // Force mobile rendering on iPad to avoid desktop-style centered layout.
+            cfg.defaultWebpagePreferences.preferredContentMode = .mobile
+        }
         webView = WKWebView(frame: .zero, configuration: cfg)
         webView.navigationDelegate = self
         webView.uiDelegate         = self
