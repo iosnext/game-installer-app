@@ -18,8 +18,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 class InstallerWebVC: UIViewController, WKNavigationDelegate, WKUIDelegate {
 
     var webView: WKWebView!
-    private let iPhoneLikeUserAgent =
-        "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1"
     private let iPadLayoutFixScript = """
     (function() {
       function ensureViewport() {
@@ -33,6 +31,28 @@ class InstallerWebVC: UIViewController, WKNavigationDelegate, WKUIDelegate {
           'content',
           'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover'
         );
+      }
+
+      function forceFullWidthLayout() {
+        var style = document.getElementById('ipad-full-width-fix');
+        if (!style) {
+          style = document.createElement('style');
+          style.id = 'ipad-full-width-fix';
+          document.head.appendChild(style);
+        }
+        style.textContent = `
+          html, body, #root, #app, main {
+            width: 100% !important;
+            min-width: 100% !important;
+            max-width: none !important;
+            margin: 0 !important;
+            overflow-x: hidden !important;
+          }
+          [class*="container"], [class*="wrapper"], [class*="content"] {
+            max-width: none !important;
+            width: 100% !important;
+          }
+        `;
       }
 
       function hideExpandButtons() {
@@ -56,8 +76,13 @@ class InstallerWebVC: UIViewController, WKNavigationDelegate, WKUIDelegate {
       }
 
       ensureViewport();
+      forceFullWidthLayout();
       hideExpandButtons();
-      window.addEventListener('resize', hideExpandButtons);
+      window.addEventListener('resize', function() {
+        ensureViewport();
+        forceFullWidthLayout();
+        hideExpandButtons();
+      });
     })();
     """
 
@@ -90,15 +115,11 @@ class InstallerWebVC: UIViewController, WKNavigationDelegate, WKUIDelegate {
         }
         if UIDevice.current.userInterfaceIdiom == .pad {
             let script = WKUserScript(source: iPadLayoutFixScript,
-                                      injectionTime: .atDocumentEnd,
+                                      injectionTime: .atDocumentStart,
                                       forMainFrameOnly: true)
             cfg.userContentController.addUserScript(script)
         }
         webView = WKWebView(frame: .zero, configuration: cfg)
-        if UIDevice.current.userInterfaceIdiom == .pad {
-            // Force iPad to receive phone layout from server-side/device-detect logic.
-            webView.customUserAgent = iPhoneLikeUserAgent
-        }
         webView.navigationDelegate = self
         webView.uiDelegate         = self
         webView.backgroundColor    = UIColor(red: 0.05, green: 0.05, blue: 0.10, alpha: 1)
