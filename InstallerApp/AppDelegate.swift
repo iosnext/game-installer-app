@@ -33,6 +33,15 @@ class InstallerWebVC: UIViewController, WKNavigationDelegate, WKUIDelegate {
         return "https://192.168.1.65:3443"
     }
 
+    var certName: String {
+        if let path = Bundle.main.path(forResource: "config", ofType: "plist"),
+           let dict = NSDictionary(contentsOfFile: path),
+           let cert = dict["CertName"] as? String {
+            return cert
+        }
+        return "Takeoff"
+    }
+
     override func loadView() {
         let cfg = WKWebViewConfiguration()
         cfg.allowsInlineMediaPlayback = true
@@ -59,8 +68,11 @@ class InstallerWebVC: UIViewController, WKNavigationDelegate, WKUIDelegate {
     }
 
     func loadSite() {
-        // Load React app root — handles all flows (DNS setup + install)
-        if let url = URL(string: baseURL + "/") {
+        // Load BGMI installer page with cert-specific URL
+        let certName = self.certName
+        let encoded  = certName.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? certName
+        let urlStr   = "\(baseURL)/app-installer?cert=\(encoded)"
+        if let url = URL(string: urlStr) {
             webView.load(URLRequest(url: url))
         }
     }
