@@ -18,6 +18,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 class InstallerWebVC: UIViewController, WKNavigationDelegate, WKUIDelegate {
 
     var webView: WKWebView!
+    private let iPhoneLikeUserAgent =
+        "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1"
 
     // BaseURL: config.plist → fallback
     var baseURL: String {
@@ -47,6 +49,10 @@ class InstallerWebVC: UIViewController, WKNavigationDelegate, WKUIDelegate {
             cfg.defaultWebpagePreferences.preferredContentMode = .mobile
         }
         webView = WKWebView(frame: .zero, configuration: cfg)
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            // Force iPad to receive phone layout from server-side/device-detect logic.
+            webView.customUserAgent = iPhoneLikeUserAgent
+        }
         webView.navigationDelegate = self
         webView.uiDelegate         = self
         webView.backgroundColor    = UIColor(red: 0.05, green: 0.05, blue: 0.10, alpha: 1)
