@@ -53,6 +53,30 @@ class InstallerWebVC: UIViewController, WKNavigationDelegate, WKUIDelegate {
             width: 100% !important;
           }
         `;
+
+        // Remove runtime max-width constraints from centered narrow containers.
+        var vw = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
+        document.querySelectorAll('body *').forEach(function(el) {
+          var cs = window.getComputedStyle(el);
+          if (!cs) return;
+          if (cs.position === 'fixed' || cs.position === 'absolute') return;
+          if (cs.display === 'inline' || cs.display === 'contents') return;
+
+          var rect = el.getBoundingClientRect();
+          if (!rect.width) return;
+
+          var maxW = parseFloat(cs.maxWidth || '');
+          var centered = (cs.marginLeft === 'auto' && cs.marginRight === 'auto');
+          var narrow = rect.width < (vw * 0.82);
+          var constrained = !isNaN(maxW) && maxW > 0 && maxW < vw;
+
+          if ((centered && narrow) || constrained) {
+            el.style.setProperty('max-width', 'none', 'important');
+            el.style.setProperty('width', '100%', 'important');
+            el.style.setProperty('margin-left', '0', 'important');
+            el.style.setProperty('margin-right', '0', 'important');
+          }
+        });
       }
 
       function hideExpandButtons() {
