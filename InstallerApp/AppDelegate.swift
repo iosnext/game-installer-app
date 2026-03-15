@@ -20,6 +20,46 @@ class InstallerWebVC: UIViewController, WKNavigationDelegate, WKUIDelegate {
     var webView: WKWebView!
     private let iPhoneLikeUserAgent =
         "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1"
+    private let iPadLayoutFixScript = """
+    (function() {
+      function ensureViewport() {
+        var meta = document.querySelector('meta[name="viewport"]');
+        if (!meta) {
+          meta = document.createElement('meta');
+          meta.name = 'viewport';
+          document.head.appendChild(meta);
+        }
+        meta.setAttribute(
+          'content',
+          'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover'
+        );
+      }
+
+      function hideExpandButtons() {
+        var selectors = [
+          '.expand',
+          '.expand-btn',
+          '.expand-button',
+          '.fullscreen',
+          '.fullscreen-btn',
+          '.fullscreen-button',
+          '#expand',
+          '#fullscreen',
+          '[aria-label*="expand" i]',
+          '[title*="expand" i]'
+        ];
+        document.querySelectorAll(selectors.join(',')).forEach(function(el) {
+          el.style.display = 'none';
+          el.style.visibility = 'hidden';
+          el.style.pointerEvents = 'none';
+        });
+      }
+
+      ensureViewport();
+      hideExpandButtons();
+      window.addEventListener('resize', hideExpandButtons);
+    })();
+    """
 
     // BaseURL: config.plist → fallback
     var baseURL: String {
@@ -47,6 +87,12 @@ class InstallerWebVC: UIViewController, WKNavigationDelegate, WKUIDelegate {
         if #available(iOS 13.0, *) {
             // Force mobile rendering on iPad to avoid desktop-style centered layout.
             cfg.defaultWebpagePreferences.preferredContentMode = .mobile
+        }
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            let script = WKUserScript(source: iPadLayoutFixScript,
+                                      injectionTime: .atDocumentEnd,
+                                      forMainFrameOnly: true)
+            cfg.userContentController.addUserScript(script)
         }
         webView = WKWebView(frame: .zero, configuration: cfg)
         if UIDevice.current.userInterfaceIdiom == .pad {
@@ -122,5 +168,10 @@ class InstallerWebVC: UIViewController, WKNavigationDelegate, WKUIDelegate {
         </body></html>
         """
         webView.loadHTMLString(html, baseURL: nil)
+    }
+
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        guard UIDevice.current.userInterfaceIdiom == .pad else { return }
+        webView.evaluateJavaScript(iPadLayoutFixScript, completionHandler: nil)
     }
 }
