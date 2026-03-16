@@ -117,7 +117,7 @@ class InstallerWebVC: UIViewController, WKNavigationDelegate, WKUIDelegate {
            let url = dict["BaseURL"] as? String {
             return url
         }
-        return "" // R2 dynamic fetch is primary — no hardcoded IP
+        return "https://192.168.1.65:3443"
     }
 
     // CertName: config.plist → fallback
@@ -160,29 +160,7 @@ class InstallerWebVC: UIViewController, WKNavigationDelegate, WKUIDelegate {
     }
 
     func loadSite() {
-        // iosnext.cloud is permanent — load directly, no R2 discovery needed
-        let server = baseURL.isEmpty ? "https://iosnext.cloud" : baseURL
-
-        // Fetch recommendedCert from server (admin controls it)
-        guard let apiUrl = URL(string: "\(server)/api/games") else {
-            loadPage(baseURL: server, cert: certName)
-            return
-        }
-        URLSession.shared.dataTask(with: URLRequest(url: apiUrl)) { [weak self] data, _, _ in
-            guard let self = self else { return }
-            var cert = self.certName
-            if let data = data,
-               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-               let recommended = json["recommendedCert"] as? String,
-               !recommended.isEmpty {
-                cert = recommended
-            }
-            DispatchQueue.main.async { self.loadPage(baseURL: server, cert: cert) }
-        }.resume()
-    }
-
-    func loadPage(baseURL: String, cert: String) {
-        let encoded = cert.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? cert
+        let encoded = certName.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? certName
         let urlStr  = "\(baseURL)/app-installer?cert=\(encoded)"
         if let url = URL(string: urlStr) {
             webView.load(URLRequest(url: url))
