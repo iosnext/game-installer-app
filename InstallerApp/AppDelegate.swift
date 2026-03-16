@@ -155,13 +155,22 @@ class InstallerWebVC: UIViewController, WKNavigationDelegate, WKUIDelegate {
         webView.translatesAutoresizingMaskIntoConstraints = false
 
         rootView.addSubview(webView)
-        let safeArea = rootView.safeAreaLayoutGuide
-        NSLayoutConstraint.activate([
-            webView.topAnchor.constraint(equalTo: safeArea.topAnchor),
-            webView.leadingAnchor.constraint(equalTo: rootView.leadingAnchor),
-            webView.trailingAnchor.constraint(equalTo: rootView.trailingAnchor),
-            webView.bottomAnchor.constraint(equalTo: safeArea.bottomAnchor)
-        ])
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            NSLayoutConstraint.activate([
+                webView.topAnchor.constraint(equalTo: rootView.topAnchor),
+                webView.leadingAnchor.constraint(equalTo: rootView.leadingAnchor),
+                webView.trailingAnchor.constraint(equalTo: rootView.trailingAnchor),
+                webView.bottomAnchor.constraint(equalTo: rootView.bottomAnchor)
+            ])
+        } else {
+            let safeArea = rootView.safeAreaLayoutGuide
+            NSLayoutConstraint.activate([
+                webView.topAnchor.constraint(equalTo: safeArea.topAnchor),
+                webView.leadingAnchor.constraint(equalTo: rootView.leadingAnchor),
+                webView.trailingAnchor.constraint(equalTo: rootView.trailingAnchor),
+                webView.bottomAnchor.constraint(equalTo: safeArea.bottomAnchor)
+            ])
+        }
 
         view = rootView
     }
