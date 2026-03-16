@@ -131,6 +131,9 @@ class InstallerWebVC: UIViewController, WKNavigationDelegate, WKUIDelegate {
     }
 
     override func loadView() {
+        let rootView = UIView(frame: UIScreen.main.bounds)
+        rootView.backgroundColor = UIColor(red: 0.05, green: 0.05, blue: 0.10, alpha: 1)
+
         let cfg = WKWebViewConfiguration()
         cfg.allowsInlineMediaPlayback = true
         if #available(iOS 13.0, *) {
@@ -149,8 +152,18 @@ class InstallerWebVC: UIViewController, WKNavigationDelegate, WKUIDelegate {
         webView.backgroundColor    = UIColor(red: 0.05, green: 0.05, blue: 0.10, alpha: 1)
         webView.isOpaque           = false
         webView.scrollView.bounces = false
-        webView.scrollView.contentInsetAdjustmentBehavior = .never
-        view = webView
+        webView.translatesAutoresizingMaskIntoConstraints = false
+
+        rootView.addSubview(webView)
+        let safeArea = rootView.safeAreaLayoutGuide
+        NSLayoutConstraint.activate([
+            webView.topAnchor.constraint(equalTo: safeArea.topAnchor),
+            webView.leadingAnchor.constraint(equalTo: rootView.leadingAnchor),
+            webView.trailingAnchor.constraint(equalTo: rootView.trailingAnchor),
+            webView.bottomAnchor.constraint(equalTo: safeArea.bottomAnchor)
+        ])
+
+        view = rootView
     }
 
     override func viewDidLoad() {
