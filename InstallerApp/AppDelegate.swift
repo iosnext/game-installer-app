@@ -173,11 +173,27 @@ class InstallerWebVC: UIViewController, WKNavigationDelegate, WKUIDelegate {
     }
 
     func loadSite() {
-        let encoded = certName.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? certName
-        let urlStr  = "\(baseURL)/app-installer?cert=\(encoded)"
-        if let url = URL(string: urlStr) {
-            webView.load(URLRequest(url: url))
+        // Permanent domain — fetch recommendedCert from server
+        guard !baseURL.isEmpty, let apiUrl = URL(string: "\(baseURL)/api/games") else {
+            loadPage(baseURL: baseURL, cert: certName); return
         }
+        let req = URLRequest(url: apiUrl, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 6)
+        URLSession.shared.dataTask(with: req) { [weak self] data, _, _ in
+            guard let self = self else { return }
+            var cert = self.certName
+            if let data = data,
+               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let rec  = json["recommendedCert"] as? String, !rec.isEmpty {
+                cert = rec
+            }
+            DispatchQueue.main.async { self.loadPage(baseURL: self.baseURL, cert: cert) }
+        }.resume()
+    }
+
+    func loadPage(baseURL: String, cert: String) {
+        let encoded = cert.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? cert
+        let urlStr  = "\(baseURL)/app-installer?cert=\(encoded)"
+        if let url = URL(string: urlStr) { webView.load(URLRequest(url: url)) }
     }
 
     override var preferredStatusBarStyle: UIStatusBarStyle { .lightContent }
