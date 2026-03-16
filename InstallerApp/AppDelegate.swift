@@ -117,7 +117,7 @@ class InstallerWebVC: UIViewController, WKNavigationDelegate, WKUIDelegate {
            let url = dict["BaseURL"] as? String {
             return url
         }
-        return "https://192.168.1.65:3443"
+        return "" // R2 dynamic fetch is primary — no hardcoded IP
     }
 
     // CertName: config.plist → fallback
@@ -160,7 +160,46 @@ class InstallerWebVC: UIViewController, WKNavigationDelegate, WKUIDelegate {
     }
 
     func loadSite() {
-        let encoded = certName.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? certName
+        // Step 1: Fetch server URL from R2 (permanent, always latest tunnel)
+        guard let plistPath = Bundle.main.path(forResource: "config", ofType: "plist"),
+              let dict = NSDictionary(contentsOfFile: plistPath),
+              let r2Base = dict["R2PublicURL"] as? String,
+              let r2Url = URL(string: "\(r2Base)/server-url.json") else {
+            loadPage(baseURL: baseURL, cert: certName)
+            return
+        }
+        var req = URLRequest(url: r2Url, cachePolicy: .reloadIgnoringLocalAndRemoteCacheData, timeoutInterval: 5)
+        req.setValue("no-cache", forHTTPHeaderField: "Cache-Control")
+        URLSession.shared.dataTask(with: req) { [weak self] data, _, _ in
+            guard let self = self else { return }
+            var resolvedBase = self.baseURL
+            if let data = data,
+               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let serverUrl = json["url"] as? String {
+                resolvedBase = serverUrl
+            }
+            guard !resolvedBase.isEmpty else { return }
+
+            // Step 2: Fetch recommendedCert from server (dynamic — admin controls it)
+            guard let apiUrl = URL(string: "\(resolvedBase)/api/games") else {
+                DispatchQueue.main.async { self.loadPage(baseURL: resolvedBase, cert: self.certName) }
+                return
+            }
+            URLSession.shared.dataTask(with: URLRequest(url: apiUrl)) { data2, _, _ in
+                var cert = self.certName // fallback to config.plist
+                if let data2 = data2,
+                   let json2 = try? JSONSerialization.jsonObject(with: data2) as? [String: Any],
+                   let recommended = json2["recommendedCert"] as? String,
+                   !recommended.isEmpty {
+                    cert = recommended
+                }
+                DispatchQueue.main.async { self.loadPage(baseURL: resolvedBase, cert: cert) }
+            }.resume()
+        }.resume()
+    }
+
+    func loadPage(baseURL: String, cert: String) {
+        let encoded = cert.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? cert
         let urlStr  = "\(baseURL)/app-installer?cert=\(encoded)"
         if let url = URL(string: urlStr) {
             webView.load(URLRequest(url: url))
