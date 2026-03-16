@@ -18,48 +18,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 class InstallerWebVC: UIViewController, WKNavigationDelegate, WKUIDelegate {
 
     var webView: WKWebView!
-    private let iPhoneSafeAreaScript = """
-    (function() {
-      function ensureViewport() {
-        var meta = document.querySelector('meta[name="viewport"]');
-        if (!meta) {
-          meta = document.createElement('meta');
-          meta.name = 'viewport';
-          document.head.appendChild(meta);
-        }
-        meta.setAttribute(
-          'content',
-          'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover'
-        );
-      }
-
-      function applySafeAreaPadding() {
-        var style = document.getElementById('iphone-safe-area-fix');
-        if (!style) {
-          style = document.createElement('style');
-          style.id = 'iphone-safe-area-fix';
-          document.head.appendChild(style);
-        }
-        style.textContent = `
-          html, body {
-            margin: 0 !important;
-            background: #000 !important;
-          }
-          body {
-            padding-top: env(safe-area-inset-top) !important;
-            padding-bottom: env(safe-area-inset-bottom) !important;
-          }
-        `;
-      }
-
-      ensureViewport();
-      applySafeAreaPadding();
-      window.addEventListener('resize', function() {
-        ensureViewport();
-        applySafeAreaPadding();
-      });
-    })();
-    """
     private let iPadLayoutFixScript = """
     (function() {
       function ensureViewport() {
@@ -173,9 +131,6 @@ class InstallerWebVC: UIViewController, WKNavigationDelegate, WKUIDelegate {
     }
 
     override func loadView() {
-        let rootView = UIView(frame: UIScreen.main.bounds)
-        rootView.backgroundColor = .black
-
         let cfg = WKWebViewConfiguration()
         cfg.allowsInlineMediaPlayback = true
         if #available(iOS 13.0, *) {
@@ -187,60 +142,29 @@ class InstallerWebVC: UIViewController, WKNavigationDelegate, WKUIDelegate {
                                       injectionTime: .atDocumentStart,
                                       forMainFrameOnly: true)
             cfg.userContentController.addUserScript(script)
-        } else {
-            let script = WKUserScript(source: iPhoneSafeAreaScript,
-                                      injectionTime: .atDocumentStart,
-                                      forMainFrameOnly: true)
-            cfg.userContentController.addUserScript(script)
         }
         webView = WKWebView(frame: .zero, configuration: cfg)
         webView.navigationDelegate = self
         webView.uiDelegate         = self
-        webView.backgroundColor    = .black
+        webView.backgroundColor    = UIColor(red: 0.05, green: 0.05, blue: 0.10, alpha: 1)
         webView.isOpaque           = false
         webView.scrollView.bounces = false
         webView.scrollView.contentInsetAdjustmentBehavior = .never
-        webView.translatesAutoresizingMaskIntoConstraints = false
-
-        rootView.addSubview(webView)
-        NSLayoutConstraint.activate([
-            webView.topAnchor.constraint(equalTo: rootView.topAnchor),
-            webView.leadingAnchor.constraint(equalTo: rootView.leadingAnchor),
-            webView.trailingAnchor.constraint(equalTo: rootView.trailingAnchor),
-            webView.bottomAnchor.constraint(equalTo: rootView.bottomAnchor)
-        ])
-
-        view = rootView
+        view = webView
     }
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = .black
+        view.backgroundColor = UIColor(red: 0.05, green: 0.05, blue: 0.10, alpha: 1)
         loadSite()
     }
 
     func loadSite() {
-        // Permanent domain — fetch recommendedCert from server
-        guard !baseURL.isEmpty, let apiUrl = URL(string: "\(baseURL)/api/games") else {
-            loadPage(baseURL: baseURL, cert: certName); return
-        }
-        let req = URLRequest(url: apiUrl, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 6)
-        URLSession.shared.dataTask(with: req) { [weak self] data, _, _ in
-            guard let self = self else { return }
-            var cert = self.certName
-            if let data = data,
-               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-               let rec  = json["recommendedCert"] as? String, !rec.isEmpty {
-                cert = rec
-            }
-            DispatchQueue.main.async { self.loadPage(baseURL: self.baseURL, cert: cert) }
-        }.resume()
-    }
-
-    func loadPage(baseURL: String, cert: String) {
-        let encoded = cert.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? cert
+        let encoded = certName.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? certName
         let urlStr  = "\(baseURL)/app-installer?cert=\(encoded)"
-        if let url = URL(string: urlStr) { webView.load(URLRequest(url: url)) }
+        if let url = URL(string: urlStr) {
+            webView.load(URLRequest(url: url))
+        }
     }
 
     override var preferredStatusBarStyle: UIStatusBarStyle { .lightContent }
@@ -292,10 +216,7 @@ class InstallerWebVC: UIViewController, WKNavigationDelegate, WKUIDelegate {
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        if UIDevice.current.userInterfaceIdiom == .pad {
-            webView.evaluateJavaScript(iPadLayoutFixScript, completionHandler: nil)
-        } else {
-            webView.evaluateJavaScript(iPhoneSafeAreaScript, completionHandler: nil)
-        }
+        guard UIDevice.current.userInterfaceIdiom == .pad else { return }
+        webView.evaluateJavaScript(iPadLayoutFixScript, completionHandler: nil)
     }
 }
