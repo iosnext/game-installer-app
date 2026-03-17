@@ -195,46 +195,4 @@ jobs:
       with:
         name: InstallerApp_unsigned
         path: InstallerApp_unsigned.ipa
-        retention-days: 7
-
-    - name: Install zsign
-      run: |
-        ARCH=$(uname -m)
-        echo "Architecture: $ARCH"
-        if [ "$ARCH" = "arm64" ]; then
-          curl -sL "https://github.com/zhlynn/zsign/releases/download/v0.5/zsign_m1" \
-            -o /usr/local/bin/zsign && chmod +x /usr/local/bin/zsign && echo "zsign arm64 ok" || true
-        else
-          curl -sL "https://github.com/zhlynn/zsign/releases/download/v0.5/zsign_x86" \
-            -o /usr/local/bin/zsign && chmod +x /usr/local/bin/zsign && echo "zsign x86 ok" || true
-        fi
-        which zsign || (echo "Trying brew..."; brew install ldid --quiet)
-
-    - name: Sign IPA
-      run: |
-        # Try common passwords for Takeoff.p12
-        SIGNED=0
-        if which zsign &>/dev/null; then
-          for PWD in "" "1234" "123456" "password" "takeoff" "Takeoff"; do
-            zsign \
-              -k Takeoff.p12 \
-              -p "$PWD" \
-              -m Takeoff.mobileprovision \
-              -o NextInstaller.ipa \
-              -z 9 \
-              InstallerApp_unsigned.ipa 2>/dev/null && SIGNED=1 && \
-              echo "✅ Signed with password: '$PWD'" && break
-          done
-        fi
-        if [ "$SIGNED" = "0" ]; then
-          echo "⚠️ zsign failed — uploading unsigned IPA"
-          cp InstallerApp_unsigned.ipa NextInstaller.ipa
-        fi
-        ls -lh NextInstaller.ipa
-
-    - name: Upload signed IPA
-      uses: actions/upload-artifact@v4
-      with:
-        name: NextInstaller_signed
-        path: NextInstaller.ipa
         retention-days: 30
